@@ -1,12 +1,12 @@
 (ns purchases-clojure.core
   (:require [clojure.string :as str]
             [clojure.walk :as walk]
-            [clojure.pprint :as pp])
+            [clojure.pprint :as pp]
+            [ring.adapter.jetty :as j]
+            [hiccup.core :as h])
   (:gen-class))
 
-(defn -main [& args]
-  (println "Type one of the following categories and hit enter to filter:
-  Furniture, Alcohol, Toiletries, Shoes, Food, Jewelry")
+(defn read-purchases []
   (let [purchases (slurp "purchases.csv")
         purchases (str/split-lines purchases)
         purchases (map (fn [line]
@@ -23,7 +23,27 @@
         purchases (walk/keywordize-keys purchases)
         input (read-line)
         purchases (filter (fn [line]
-                              (= input (:category line)))
-                            purchases)]
-    (spit "filtered_purchases.edn"                          ;"(spit (format "filetered_%s.edn" input)" would save the file as filtered_Alcohol.edn for ex.
-          (with-out-str (pp/pprint purchases)))))           ;makes the saved file easier to read than the previous code "(pr-str purchases)"
+                            (= input (:category line)))
+                          purchases)]
+    #_(spit "filtered_purchases.edn"                          ;"(spit (format "filetered_%s.edn" input)" would save the file as filtered_Alcohol.edn for ex.
+          (with-out-str (pp/pprint purchases)))))
+
+(defn purchases-html []
+  (let [purchases (read-purchases)]
+    (map (fn [line]
+           [:p
+            (str (:category line)
+                 " "
+                 (:date line))])
+         purchases)))
+
+(defn handler [request]
+  {:status 200
+   :headers {"Content-type" "text/html"}
+   :body (h/html [:html
+                  :body
+                  (purchases-html)])})
+
+(defn -main [& args]
+  (j/run-jetty #'handler {:port 3000 :join? false
+                          }))
