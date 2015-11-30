@@ -21,29 +21,29 @@
                          (apply hash-map line))
                        purchases)
         purchases (walk/keywordize-keys purchases)
-        input (read-line)
-        purchases (filter (fn [line]
-                            (= input (:category line)))
-                          purchases)]
+        ;input (read-line)
+        ;purchases (filter (fn [line] (= input (:category line))) purchases)
+        ]
     #_(spit "filtered_purchases.edn"                          ;"(spit (format "filetered_%s.edn" input)" would save the file as filtered_Alcohol.edn for ex.
-          (with-out-str (pp/pprint purchases)))))
+          (with-out-str (pp/pprint purchases)))
+    purchases))
 
-(defn purchases-html []
-  (let [purchases (read-purchases)]
-    (map (fn [line]
-           [:p
-            (str (:category line)
-                 " "
-                 (:date line))])
-         purchases)))
+(defn purchase-item [purchase-map]
+  [:p
+   "Customer ID: "
+   [:c (:customer_id purchase-map)] [:br]
+   [:b (:category purchase-map)]
+   " "
+   [:i (:credit_card purchase-map)]
+   " "
+   [:d (:date purchase-map)]])
 
 (defn handler [request]
   {:status 200
    :headers {"Content-type" "text/html"}
    :body (h/html [:html
-                  :body
-                  (purchases-html)])})
+                  ;:body <- this was showing :body on my localhost page so commenting out solved that and it still displays the purchases
+                  (map purchase-item (read-purchases))])})
 
 (defn -main [& args]
-  (j/run-jetty #'handler {:port 3000 :join? false
-                          }))
+  (j/run-jetty #'handler {:port 3000 :join? false}))        ;join? false means we can run this in the REPL without having to ....
